@@ -16,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/Caronise/tinyapp/issues"
   },
-  "homepage": "https://github.com/Caronise/tinyapp#readme"
+  "homepage": "https://github.com/Caronise/tinyapp#readme",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
 }
