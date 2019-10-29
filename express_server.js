@@ -9,7 +9,7 @@ app.set('view engine', 'ejs');
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
-}
+};
 
 app.get('/', (req, res) => {
   res.send('Hello!');
@@ -35,7 +35,7 @@ app.get("/u/:shortURL", (req, res) => {
 
 app.get('/urls/new', (req, res) => {
   res.render("urls_new");
-})
+});
 
 app.get('/urls/:shortURL', (req, res) => {
   let templateVars = {
@@ -55,11 +55,11 @@ app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
           
-function generateRandomString() {
+const generateRandomString = () => {
   let randomString = '';
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   for (let i = 0; i < 6; i++) {
     randomString += characters.charAt(Math.floor(Math.random() * characters.length));
   }
   return randomString;
-}
+};
