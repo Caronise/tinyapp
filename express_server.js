@@ -55,6 +55,18 @@ const findUser = (email) => {
   return false;
 };
 
+const urlsForUser = (id) => {
+  let validURLs = [];
+  // Loop through the database 
+  for (const key in urlDatabase) {
+    // If the url's user_id matches the id of the current user push that url object to validURLS
+    if (urlDatabase[key].userID === id) {
+      validURLs.push(urlDatabase[key])
+    } 
+  }
+  return validURLs;
+};
+
 app.get('/', (req, res) => {
   res.send('Hello!');
 });
@@ -68,17 +80,23 @@ app.get('/hello', (req, res) => {
 });
 
 app.get('/urls', (req, res) => {
-  let templateVars = {
-    urls: urlDatabase,
+  const id = req.cookies["user_id"];
+  const templateVars = {
     user: users[req.cookies["user_id"]],
   };
-  res.render("urls_index", templateVars);
-  console.log(urlDatabase)
+
+  templateVars.urls = urlsForUser(id);
+
+  if (req.cookies["user_id"] !== undefined) {
+    res.render("urls_index", templateVars);
+  } else {
+    res.send('Please register or log in to view the URL list');
+  }
 });
 
 app.get("/u/:shortURL", (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL];
-  res.redirect(longURL);
+    const longURL = urlDatabase[req.params.shortURL];
+    res.redirect(longURL);  
 });
 
 app.get('/urls/new', (req, res) => {
@@ -107,29 +125,47 @@ app.get('/login', (req, res) => {
 });
 
 app.get('/urls/:shortURL', (req, res) => {
-  let templateVars = {
-    shortURL: req.params.shortURL,
-    url: urlDatabase[req.params.shortURL],
-    user: users[req.cookies["user_id"]],
-  };
-  res.render("urls_show", templateVars);
+  if (req.cookies["user_id"] !== urlDatabase[req.params.shortURL].userID) {
+    res.status(404).send("The short URL cannot be located in your account");
+    return;
+  }
+  if (req.cookies["user_id"] !== undefined) {
+    let templateVars = {
+      shortURL: req.params.shortURL,
+      url: urlDatabase[req.params.shortURL],
+      user: users[req.cookies["user_id"]],
+    };
+    res.render("urls_show", templateVars);
+  } else {
+    res.send('Please register or log in to view this short URL');
+  }
 });
 
 app.post('/urls', (req, res) => {
   const shortURL = generateRandomString();
   urlDatabase[shortURL] = { shortURL: shortURL, longURL: req.body.longURL, userID: req.cookies['user_id'] };
-  // DO I IMPLEMENT HERE
   res.redirect(`/urls/${shortURL}`);
 });
 
 app.post('/urls/:shortURL/delete', (req, res) => {
+
+  console.log(req.params);
+  console.log(req.params.shortURL);
+
+  if (req.cookies["user_id"] !== urlDatabase[req.params.shortURL].userID) {
+    res.status(404).send("The short URL cannot be located in your account");
+    return;
+  }
   delete urlDatabase[req.params.shortURL];
   res.redirect('/urls');
 });
 
 app.post('/urls/:shortURL', (req, res) => {
+  if (req.cookies["user_id"] !== urlDatabase[req.params.shortURL].userID) {
+    res.status(404).send("The short URL cannot be located in your account");
+    return;
+  }
   urlDatabase[req.params.shortURL] = { longURL: req.body.longURL, userID: req.cookies['user_id'] };
-  console.log("+++++++++++");
   res.redirect(`/urls`);
 });
 
@@ -168,7 +204,7 @@ app.post('/login', (req, res) => {
 
 app.post('/logout', (req, res) => {
   res.clearCookie('user_id', req.body.password);
-  res.redirect('/urls');
+  res.redirect('/register');
 });
 
 app.listen(PORT, () => {
