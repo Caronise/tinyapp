@@ -24,10 +24,10 @@
       <tbody>
         <% for(let url in urls) { %>
           <tr>
-            <td><%= url %></td>
+            <td><%= urls[url].shortURL %></td>
             <td><%= urls[url].longURL %></td> 
-            <td><form method="GET" action="/urls/<%= url %>"><button type="submit" style="color: lightblue; border: 1px, solid, lightblue; border-radius: 8px;">Edit</button></form></td>         
-            <td><form method="POST" action="/urls/<%= url %>/delete"><button type="submit" style="color: red; border: 1px, solid, red; border-radius: 8px;">Delete</button></form></td>
+            <td><form method="GET" action="/urls/<%= urls[url].shortURL %>"><button type="submit" style="color: lightblue; border: 1px, solid, lightblue; border-radius: 8px;">Edit</button></form></td>         
+            <td><form method="POST" action="/urls/<%= urls[url].shortURL %>/delete"><button type="submit" style="color: red; border: 1px, solid, red; border-radius: 8px;">Delete</button></form></td>
           </tr>
         <% } %>
       </tbody>
