@@ -4,6 +4,8 @@ const PORT = 8080;
 const bodyParser = require('body-parser');
 var cookieSession = require('cookie-session');
 const bcrypt = require('bcrypt');
+const { getUserByEmail } = require('./helpers');
+
 app.use(bodyParser.urlencoded({extended: true}));
 app.set('view engine', 'ejs');
 app.use(cookieSession({
@@ -73,15 +75,7 @@ const urlsForUser = (id) => {
   return validURLs;
 };
 
-const getUserByEmail = function(email, users) {
-  for (let userId in users) {
-    const currentUser = users[userId];
-    if (currentUser.email === email) {
-      return currentUser;
-    }
-  }
-  return false;
-};
+
 
 
 app.get('/', (req, res) => {
