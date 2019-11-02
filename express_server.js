@@ -51,15 +51,15 @@ const addUser = (id, email, password) => {
   return id;
 };
 
-const findUser = (email) => {
-  for (let userId in users) {
-    const currentUser = users[userId];
-    if (currentUser.email === email) {
-      return currentUser;
-    }
-  }
-  return false;
-};
+// const findUser = (email) => {
+//   for (let userId in users) {
+//     const currentUser = users[userId];
+//     if (currentUser.email === email) {
+//       return currentUser;
+//     }
+//   }
+//   return false;
+// };
 
 const urlsForUser = (id) => {
   let validURLs = [];
@@ -72,6 +72,18 @@ const urlsForUser = (id) => {
   }
   return validURLs;
 };
+
+const getUserByEmail = function(email, users) {
+  for (let userId in users) {
+    const currentUser = users[userId];
+    if (currentUser.email === email) {
+      return currentUser;
+    }
+  }
+  return false;
+};
+
+
 
 app.get('/', (req, res) => {
   res.redirect('/login');
@@ -148,6 +160,26 @@ app.get('/urls/:shortURL', (req, res) => {
   }
 });
 
+app.post('/urls/:shortURL', (req, res) => {
+
+  console.log(req.params);
+  console.log(req.params.shortURL);
+  console.log(urlDatabase);
+
+  if (req.session.user_id !== urlDatabase[req.params.shortURL].userID) {
+    res.status(404).send("The short URL cannot be located in your account");
+    return;
+  }
+  urlDatabase[req.params.shortURL] = { 
+    shortURL: req.params.shortURL, 
+    longURL: req.body.longURL, 
+    userID: req.session.user_id 
+  };
+  
+  console.log(urlDatabase);
+  res.redirect(`/urls`);
+});
+
 app.post('/urls', (req, res) => {
   const shortURL = generateRandomString();
   urlDatabase[shortURL] = { 
@@ -171,15 +203,6 @@ app.post('/urls/:shortURL/delete', (req, res) => {
   res.redirect('/urls');
 });
 
-app.post('/urls/:shortURL', (req, res) => {
-  if (req.session.user_id !== urlDatabase[req.params.shortURL].userID) {
-    res.status(404).send("The short URL cannot be located in your account");
-    return;
-  }
-  urlDatabase[req.params.shortURL] = { longURL: req.body.longURL, userID: req.session.user_id };
-  res.redirect(`/urls`);
-});
-
 app.post('/register', (req, res) => {
   const { email, password } = req.body;
 
@@ -188,7 +211,7 @@ app.post('/register', (req, res) => {
     return;
   }
   
-  if (findUser(email)) {
+  if (getUserByEmail(email, users)) {
     res.status(401).send('That email is already in use');
     return;
   }
@@ -205,18 +228,18 @@ app.post('/register', (req, res) => {
 
 app.post('/login', (req, res) => {
   const { email, password } = req.body;
-  if (!findUser(email)) {
+  if (!getUserByEmail(email, users)) {
     res.status(403).send('You\'ve entered an incorrect email. Please try again');
     return;
   }
 
-  const safePassword = bcrypt.compareSync(password, findUser(email).password);
+  const safePassword = bcrypt.compareSync(password, getUserByEmail(email, users).password);
   
   if (!safePassword) {
     res.status(403).send('Invalid Password');
     return;
   }
-  req.session.user_id, findUser(email).id;
+  req.session.user_id, getUserByEmail(email, users).id;
   res.redirect(`/urls`);
 });
 
