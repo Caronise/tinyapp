@@ -3,6 +3,7 @@ const app = express();
 const PORT = 8080;
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
+const bcrypt = require('bcrypt');
 
 app.use(bodyParser.urlencoded({extended: true}));
 app.set('view engine', 'ejs');
@@ -144,7 +145,11 @@ app.get('/urls/:shortURL', (req, res) => {
 
 app.post('/urls', (req, res) => {
   const shortURL = generateRandomString();
-  urlDatabase[shortURL] = { shortURL: shortURL, longURL: req.body.longURL, userID: req.cookies['user_id'] };
+  urlDatabase[shortURL] = { 
+    shortURL: shortURL, 
+    longURL: req.body.longURL, 
+    userID: req.cookies['user_id'] 
+  };
   res.redirect(`/urls/${shortURL}`);
 });
 
@@ -172,8 +177,9 @@ app.post('/urls/:shortURL', (req, res) => {
 
 app.post('/register', (req, res) => {
   const { email, password } = req.body;
+
   if (email === "" || password === "") {
-    res.status(401).send('Invalid entry, try again!');
+    res.status(401).send('Invalid username / password, try again!');
     return;
   }
   
@@ -181,8 +187,12 @@ app.post('/register', (req, res) => {
     res.status(401).send('That email is already in use');
     return;
   }
+
   const id = generateRandomString();
-  addUser(id, email, password);
+  const hashedPassword = bcrypt.hashSync(password, 10);
+  addUser(id, email, hashedPassword);
+
+  console.log(hashedPassword);
 
   res.cookie('user_id', id);
   res.redirect('/urls');
@@ -192,10 +202,13 @@ app.post('/login', (req, res) => {
   const { email, password } = req.body;
   const user = findUser(email);
   if (!user) {
-    res.status(403).send('No User found');
+    res.status(403).send('You\'ve entered an incorrect email. Please try again');
     return;
   }
-  if (user.password !== password) {
+
+  const safePassword = bcrypt.compareSync(password, findUser(email).password);
+  
+  if (!safePassword) {
     res.status(403).send('Invalid Password');
     return;
   }
@@ -211,4 +224,4 @@ app.post('/logout', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
-          
+
