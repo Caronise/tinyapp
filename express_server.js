@@ -84,7 +84,6 @@ const getUserByEmail = function(email, users) {
 };
 
 
-
 app.get('/', (req, res) => {
   res.redirect('/login');
 });
