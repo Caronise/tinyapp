@@ -2,12 +2,17 @@ const express = require('express');
 const app = express();
 const PORT = 8080;
 const bodyParser = require('body-parser');
-const cookieParser = require('cookie-parser');
+var cookieSession = require('cookie-session');
 const bcrypt = require('bcrypt');
-
 app.use(bodyParser.urlencoded({extended: true}));
 app.set('view engine', 'ejs');
-app.use(cookieParser());
+app.use(cookieSession({
+  name: 'session',
+  keys: [
+    '7de13381-61b5-47aa-9c74-5ede1ceac390',
+    '8dddb6db-4d8d-4571-a836-04fa8d5a9186',
+  ],
+}));
 
 const urlDatabase = {
   b6UTxQ: { longURL: "https://www.tsn.ca", userID: "aJ48lW" },
@@ -69,7 +74,7 @@ const urlsForUser = (id) => {
 };
 
 app.get('/', (req, res) => {
-  res.send('Hello!');
+  res.redirect('/login');
 });
 
 app.get('/urls.json', (req, res) => {
@@ -81,14 +86,14 @@ app.get('/hello', (req, res) => {
 });
 
 app.get('/urls', (req, res) => {
-  const id = req.cookies["user_id"];
+  const id = req.session.user_id;
   const templateVars = {
-    user: users[req.cookies["user_id"]],
+    user: users[req.session.user_id],
   };
 
   templateVars.urls = urlsForUser(id);
 
-  if (req.cookies["user_id"] !== undefined) {
+  if (req.session.user_id !== undefined) {
     res.render("urls_index", templateVars);
   } else {
     res.send('Please register or log in to view the URL list');
@@ -102,9 +107,9 @@ app.get("/u/:shortURL", (req, res) => {
 });
 
 app.get('/urls/new', (req, res) => {
-  if (req.cookies["user_id"] !== undefined) {
+  if (req.session.user_id !== undefined) {
     let templateVars = {
-      user: users[req.cookies["user_id"]],
+      user: users[req.session.user_id],
     };
     res.render("urls_new", templateVars);
   } else {
@@ -114,28 +119,28 @@ app.get('/urls/new', (req, res) => {
 
 app.get('/register', (req, res) => {
   let templateVars = {
-    user: users[req.cookies["user_id"]],
+    user: users[req.session.user_id],
   };
   res.render("urls_register", templateVars);
 });
 
 app.get('/login', (req, res) => {
   let templateVars = {
-    user: users[req.cookies["user_id"]],
+    user: users[req.session.user_id],
   };
   res.render('urls_login', templateVars);
 });
 
 app.get('/urls/:shortURL', (req, res) => {
-  if (req.cookies["user_id"] !== urlDatabase[req.params.shortURL].userID) {
+  if (req.session.user_id !== urlDatabase[req.params.shortURL].userID) {
     res.status(404).send("The short URL cannot be located in your account");
     return;
   }
-  if (req.cookies["user_id"] !== undefined) {
+  if (req.session.user_id !== undefined) {
     let templateVars = {
       shortURL: req.params.shortURL,
       url: urlDatabase[req.params.shortURL],
-      user: users[req.cookies["user_id"]],
+      user: users[req.session.user_id],
     };
     res.render("urls_show", templateVars);
   } else {
@@ -148,7 +153,7 @@ app.post('/urls', (req, res) => {
   urlDatabase[shortURL] = { 
     shortURL: shortURL, 
     longURL: req.body.longURL, 
-    userID: req.cookies['user_id'] 
+    userID: req.session.user_id 
   };
   res.redirect(`/urls/${shortURL}`);
 });
@@ -158,7 +163,7 @@ app.post('/urls/:shortURL/delete', (req, res) => {
   console.log(req.params);
   console.log(req.params.shortURL);
 
-  if (req.cookies["user_id"] !== urlDatabase[req.params.shortURL].userID) {
+  if (req.session.user_id !== urlDatabase[req.params.shortURL].userID) {
     res.status(404).send("The short URL cannot be located in your account");
     return;
   }
@@ -167,11 +172,11 @@ app.post('/urls/:shortURL/delete', (req, res) => {
 });
 
 app.post('/urls/:shortURL', (req, res) => {
-  if (req.cookies["user_id"] !== urlDatabase[req.params.shortURL].userID) {
+  if (req.session.user_id !== urlDatabase[req.params.shortURL].userID) {
     res.status(404).send("The short URL cannot be located in your account");
     return;
   }
-  urlDatabase[req.params.shortURL] = { longURL: req.body.longURL, userID: req.cookies['user_id'] };
+  urlDatabase[req.params.shortURL] = { longURL: req.body.longURL, userID: req.session.user_id };
   res.redirect(`/urls`);
 });
 
@@ -194,14 +199,13 @@ app.post('/register', (req, res) => {
 
   console.log(hashedPassword);
 
-  res.cookie('user_id', id);
+  req.session.user_id = id;
   res.redirect('/urls');
 });
 
 app.post('/login', (req, res) => {
   const { email, password } = req.body;
-  const user = findUser(email);
-  if (!user) {
+  if (!findUser(email)) {
     res.status(403).send('You\'ve entered an incorrect email. Please try again');
     return;
   }
@@ -212,12 +216,12 @@ app.post('/login', (req, res) => {
     res.status(403).send('Invalid Password');
     return;
   }
-  res.cookie('user_id', user.id);
+  req.session.user_id, findUser(email).id;
   res.redirect(`/urls`);
 });
 
 app.post('/logout', (req, res) => {
-  res.clearCookie('user_id', req.body.password);
+  req.session = null;
   res.redirect('/register');
 });
 
