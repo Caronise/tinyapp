@@ -4,7 +4,7 @@ TinyApp is a full stack web application built with Node and Express that allows 
 
 ## Features 
 
-- Users are able to create their own account
+- Users are able to create their own account.
 - Within their account they are able to create and store short versions of valid URLs
 - Users can share their short URLs
 - User can replace or delete their own URLs
@@ -15,11 +15,11 @@ TinyApp is a full stack web application built with Node and Express that allows 
 
 !["Page where users can log in to their account]()
 
+!["Page to create new short URl"]()
+
 !["Main page containing all of the user's short URLs"]()
 
 !["Edit page allowing users to update their short URLs"]()
-
-!["Page to create new short URl"]()
 
 ## Dependencies
 
