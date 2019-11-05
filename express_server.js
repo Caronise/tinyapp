@@ -1,10 +1,10 @@
 const express = require('express');
-const app = express();
-const PORT = 8080;
 const bodyParser = require('body-parser');
 const cookieSession = require('cookie-session');
 const bcrypt = require('bcrypt');
 const { urlDatabase, users, generateRandomString, addUser, urlsForUser, getUserByEmail } = require('./helpers');
+const app = express();
+const PORT = 8080;
 
 app.use(bodyParser.urlencoded({extended: true}));
 app.set('view engine', 'ejs');
@@ -16,12 +16,15 @@ app.use(cookieSession({
   ],
 }));
 
+app.listen(PORT, () => {
+  console.log(`Example app listening on port ${PORT}!`);
+});
 
+// If user is logged in redirect to urls page, else redirect to login page.
 app.get('/', (req, res) => {
   if (req.session.user_id) {
     res.redirect("/urls")
-  }
-  else {
+  } else {
     res.redirect("/login")
   }
 });
@@ -30,14 +33,13 @@ app.get('/urls.json', (req, res) => {
   res.json(urlDatabase);
 });
 
+// This route shows the urls to the user, if the user is not registered he will be prompted to register or log in
 app.get('/urls', (req, res) => {
-  const id = req.session.user_id;
+  const userUrls = urlsForUser(req.session.user_id);
   const templateVars = {
-    user: users[req.session.user_id],
+    urls: userUrls,
+    user: users[req.session.user_id]
   };
-
-  templateVars.urls = urlsForUser(id);
-
   if (req.session.user_id !== undefined) {
     res.render("urls_index", templateVars);
   } else {
@@ -45,15 +47,7 @@ app.get('/urls', (req, res) => {
   }
 });
 
-app.get("/u/:shortURL", (req, res) => {
-  if (!urlDatabase[req.params.shortURL]) {
-    res.status(404).send("The short URL cannot be located.")
-    return;
-  }
-  const longURL = urlDatabase[req.params.shortURL].longURL;
-  res.redirect(longURL);
-});
-
+// This route renders the page so a user can create a new tinyURL
 app.get('/urls/new', (req, res) => {
   if (req.session.user_id !== undefined) {
     let templateVars = {
@@ -65,29 +59,16 @@ app.get('/urls/new', (req, res) => {
   }
 });
 
-app.get('/register', (req, res) => {
-  let templateVars = {
-    user: users[req.session.user_id],
-  };
-  res.render("urls_register", templateVars);
-});
-
-app.get('/login', (req, res) => {
-  let templateVars = {
-    user: users[req.session.user_id],
-  };
-  res.render('urls_login', templateVars);
-});
-
+// This route renders the edit page so a user can edit his short URLS, or view the shortURL after creation
 app.get('/urls/:shortURL', (req, res) => {
-  if (req.session.user_id !== urlDatabase[req.params.shortURL].ID) {
+  if (req.session.user_id !== urlDatabase[req.params.shortURL].userID) {
     res.status(404).send("The short URL cannot be located in your account");
     return;
   }
   if (req.session.user_id !== undefined) {
     let templateVars = {
       shortURL: req.params.shortURL,
-      url: urlDatabase[req.params.shortURL],
+      longURL: urlDatabase[req.params.shortURL].longURL,
       user: users[req.session.user_id],
     };
     res.render("urls_show", templateVars);
@@ -96,15 +77,32 @@ app.get('/urls/:shortURL', (req, res) => {
   }
 });
 
+// This route renders the registration page so users can register
+app.get('/register', (req, res) => {
+  let templateVars = {
+    user: users[req.session.user_id],
+  };
+  res.render("urls_register", templateVars);
+});
+
+// This route renders the login page so users can login
+app.get('/login', (req, res) => {
+  let templateVars = {
+    user: users[req.session.user_id],
+  };
+  res.render('urls_login', templateVars);
+});
+
+// 
 app.post('/urls/:shortURL', (req, res) => {
-  if (req.session.user_id !== urlDatabase[req.params.shortURL].ID) {
+  if (req.session.user_id !== urlDatabase[req.params.shortURL].userID) {
     res.status(404).send("The short URL cannot be located in your account");
     return;
   }
   urlDatabase[req.params.shortURL] = {
     shortURL: req.params.shortURL,
     longURL: req.body.longURL,
-    ID: req.session.user_id
+    userID: req.session.user_id
   };
   res.redirect(`/urls`);
 });
@@ -112,15 +110,15 @@ app.post('/urls/:shortURL', (req, res) => {
 app.post('/urls', (req, res) => {
   const shortURL = generateRandomString();
   urlDatabase[shortURL] = {
-    shortURL: shortURL,
+    shortURL,
     longURL: req.body.longURL,
-    ID: req.session.user_id
+    userID: req.session.user_id
   };
   res.redirect(`/urls/${shortURL}`);
 });
 
 app.post('/urls/:shortURL/delete', (req, res) => {
-  if (req.session.user_id !== urlDatabase[req.params.shortURL].ID) {
+  if (req.session.user_id !== urlDatabase[req.params.shortURL].userID) {
     res.status(404).send("The short URL cannot be located in your account");
     return;
   }
@@ -163,9 +161,5 @@ app.post('/login', (req, res) => {
 app.post('/logout', (req, res) => {
   req.session = null;
   res.redirect('/register');
-});
-
-app.listen(PORT, () => {
-  console.log(`Example app listening on port ${PORT}!`);
 });
 
