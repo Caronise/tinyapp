@@ -1,20 +1,6 @@
-const urlDatabase = {
-  b6UTxQ: { longURL: "https://www.tsn.ca", userID: "aJ48lW" },
-  i3BoGr: { longURL: "https://www.google.ca", userID: "aJ48lW" }
-};
+const urlDatabase = { };
 
-const users = {
-  "userRandomID": {
-    id: "userRandomID",
-    email: "user@example.com",
-    password: "purple-monkey-dinosaur"
-  },
-  "user2RandomID": {
-    id: "user2RandomID",
-    email: "user2@example.com",
-    password: "dishwasher-funk"
-  }
-};
+const users = { };
 
 const generateRandomString = () => {
   let randomString = '';
@@ -36,12 +22,12 @@ const addUser = (id, email, password) => {
 };
 
 const urlsForUser = (id) => {
-  let validURLs = [];
+  let validURLs = {};
   // Loop through the database
-  for (const key in urlDatabase) {
+  for (const url in urlDatabase) {
     // If the url's user_id matches the id of the current user push that url object to validURLS
-    if (urlDatabase[key].userID === id) {
-      validURLs.push(urlDatabase[key]);
+    if (urlDatabase[url].userID === id) {
+      validURLs[url] = urlDatabase[url];
     }
   }
   return validURLs;
