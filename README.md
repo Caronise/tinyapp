@@ -11,15 +11,15 @@ TinyApp is a full stack web application built with Node and Express that allows 
 
 ## Final Product
 
-!["Page where users can register their account"]()
+!["Page where users can register their account"](https://raw.githubusercontent.com/Caronise/tinyapp/master/docs/register.png)
 
-!["Page where users can log in to their account]()
+!["Page where users can log in to their account](https://raw.githubusercontent.com/Caronise/tinyapp/master/docs/log_in.png)
 
-!["Page to create new short URl"]()
+!["Page to create new short URl"](https://raw.githubusercontent.com/Caronise/tinyapp/master/docs/create.png)
 
-!["Main page containing all of the user's short URLs"]()
+!["Main page containing all of the user's short URLs"](https://raw.githubusercontent.com/Caronise/tinyapp/master/docs/urls.png)
 
-!["Edit page allowing users to update their short URLs"]()
+!["Edit page allowing users to update their short URLs"](https://raw.githubusercontent.com/Caronise/tinyapp/master/docs/edit.png)
 
 ## Dependencies
 
