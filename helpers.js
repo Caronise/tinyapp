@@ -1,5 +1,4 @@
 const urlDatabase = { };
-
 const users = { };
 
 const generateRandomString = () => {
@@ -9,16 +8,6 @@ const generateRandomString = () => {
     randomString += characters.charAt(Math.floor(Math.random() * characters.length));
   }
   return randomString;
-};
-
-const addUser = (id, email, password) => {
-  const newUser = {
-    id,
-    email,
-    password,
-  };
-  users[id] = newUser;
-  return id;
 };
 
 const urlsForUser = (id) => {
@@ -40,7 +29,6 @@ const getUserByEmail = function(email, users) {
       return currentUser;
     }
   }
-  return false;
 };
 
-module.exports = { urlDatabase, users, generateRandomString, addUser, urlsForUser, getUserByEmail };
+module.exports = { urlDatabase, users, generateRandomString, urlsForUser, getUserByEmail };
