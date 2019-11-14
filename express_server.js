@@ -2,7 +2,8 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cookieSession = require('cookie-session');
 const bcrypt = require('bcrypt');
-const { urlDatabase, users, generateRandomString, addUser, urlsForUser, getUserByEmail } = require('./helpers');
+const salt = bcrypt.genSaltSync(10);
+const { urlDatabase, users, generateRandomString, urlsForUser, getUserByEmail } = require('./helpers');
 const app = express();
 const PORT = 8080;
 
@@ -35,21 +36,16 @@ app.get('/urls.json', (req, res) => {
 
 // This route shows the urls to the user, if the user is not registered he will be prompted to register or log in
 app.get('/urls', (req, res) => {
-  const userUrls = urlsForUser(req.session.user_id);
   const templateVars = {
-    urls: userUrls,
+    urls: urlsForUser(req.session.user_id),
     user: users[req.session.user_id]
   };
-  if (req.session.user_id !== undefined) {
     res.render("urls_index", templateVars);
-  } else {
-    res.send('Please register or log in to view the URL list');
-  }
 });
 
 // This route renders the page so a user can create a new tinyURL
 app.get('/urls/new', (req, res) => {
-  if (req.session.user_id !== undefined) {
+  if (req.session.user_id) {
     let templateVars = {
       user: users[req.session.user_id],
     };
@@ -65,7 +61,7 @@ app.get('/urls/:shortURL', (req, res) => {
     res.status(404).send("The short URL cannot be located in your account");
     return;
   }
-  if (req.session.user_id !== undefined) {
+  if (req.session.user_id) {
     let templateVars = {
       shortURL: req.params.shortURL,
       longURL: urlDatabase[req.params.shortURL].longURL,
@@ -75,6 +71,11 @@ app.get('/urls/:shortURL', (req, res) => {
   } else {
     res.send('Please register or log in to view this short URL');
   }
+});
+
+app.get('/u/:shortURL', (req, res) => {
+  const longURL = urlDatabase[req.params.shortURL].longURL;
+  res.redirect(longURL);
 });
 
 // This route renders the registration page so users can register
@@ -128,19 +129,25 @@ app.post('/urls/:shortURL/delete', (req, res) => {
 
 app.post('/register', (req, res) => {
   const { email, password } = req.body;
-  if (email === "" || password === "") {
+  if (!email|| !password) {
     res.status(401).send('Invalid username / password, try again!');
     return;
   }
-  if (getUserByEmail(email, users)) {
+  else if (getUserByEmail(email, users)) {
     res.status(401).send('That email is already in use');
     return;
+  } else {
+    const id = generateRandomString();
+    const hashedPassword = bcrypt.hashSync(password, salt);
+    // addUser(id, email, hashedPassword);
+    users[id] = {
+      id,
+      email,
+      password: hashedPassword
+    };
+    req.session.user_id = id;
+    res.redirect('/urls');
   }
-  const id = generateRandomString();
-  const hashedPassword = bcrypt.hashSync(password, 10);
-  addUser(id, email, hashedPassword);
-  req.session.user_id = id;
-  res.redirect('/urls');
 });
 
 app.post('/login', (req, res) => {
@@ -149,17 +156,23 @@ app.post('/login', (req, res) => {
     res.status(403).send('You\'ve entered an incorrect email. Please try again');
     return;
   }
-  const safePassword = bcrypt.compareSync(password, getUserByEmail(email, users).password);
-  if (!safePassword) {
+  else if (!bcrypt.compareSync(password, getUserByEmail(email, users).password)) {
     res.status(403).send('Invalid Password');
     return;
+  } else {
+    for (const userId in users) {
+      let email = users[userId].email;
+      if (email === req.body.email) {
+        user_id = users[userId].id;
+      }
+    }
+    req.session.user_id = user_id;
+    res.redirect(`/urls`);
   }
-  req.session.user_id, getUserByEmail(email, users).id;
-  res.redirect(`/urls`);
 });
 
 app.post('/logout', (req, res) => {
   req.session = null;
-  res.redirect('/register');
+  res.redirect('/login');
 });
 
