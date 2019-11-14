@@ -139,7 +139,6 @@ app.post('/register', (req, res) => {
   } else {
     const id = generateRandomString();
     const hashedPassword = bcrypt.hashSync(password, salt);
-    // addUser(id, email, hashedPassword);
     users[id] = {
       id,
       email,
